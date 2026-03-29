@@ -1,0 +1,69 @@
+# dependencies
+
+node_modules/
+
+# environment variables
+
+.env
+.env.*
+!.env.example
+
+# build files (frontend)
+
+client/dist/
+
+# optional build 
+
+server/dist/
+build/
+
+# uploads
+
+server/uploads/*
+!server/uploads/.gitkeep
+
+# logs 
+
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# debug / error files
+
+client/build_error.txt
+client/build_error2.txt
+client/build_error3.txt
+client/build_output.log
+client/build_output.txt
+
+# cache / temp
+
+.cache/
+temp/
+.tmp/
+
+# coverage (tests)
+
+coverage/
+.nyc_output/
+
+# editor / IDE
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# misc
+
+*.local
+*.tsbuildinfo
+*.zip

@@ -1,0 +1,22 @@
+const express = require('express');
+const router = express.Router();
+const { register, login, refreshAccessToken, logout, getMe } = require('../controllers/authController');
+const { protect } = require('../middleware/auth');
+const { validate, registerSchema, loginSchema } = require('../middleware/validate');
+
+/**
+ * Auth Routes
+ * POST /api/auth/register  — Register a new user
+ * POST /api/auth/login     — Login user
+ * POST /api/auth/refresh   — Refresh access token (uses httpOnly cookie)
+ * POST /api/auth/logout    — Logout (invalidate refresh token)
+ * GET  /api/auth/me        — Get current user (protected)
+ */
+
+router.post('/register', validate(registerSchema), register);
+router.post('/login', validate(loginSchema), login);
+router.post('/refresh', refreshAccessToken);
+router.post('/logout', logout);
+router.get('/me', protect, getMe);
+
+module.exports = router;
