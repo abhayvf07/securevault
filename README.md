@@ -23,7 +23,7 @@ Overview of files, folders, and user activity.
 ### 🔗 File Sharing
 
 Share files using secure links with optional protection.
-<img width="1920" height="923" alt="Share" src="Screenshots/share.png" />
+<img width="1920" height="923" alt="Share" src="Screenshots/Share.png" />
 
 ---
 
