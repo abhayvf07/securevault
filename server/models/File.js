@@ -49,6 +49,10 @@ const fileSchema = new mongoose.Schema(
       enum: ['local', 'cloudinary'],
       default: 'local',
     },
+    publicId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

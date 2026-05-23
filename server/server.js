@@ -7,6 +7,16 @@ const logger = require('./utils/logger');
 // Load environment variables
 dotenv.config();
 
+const requiredEnv = ['MONGO_URI', 'JWT_SECRET'];
+if (process.env.NODE_ENV === 'production') {
+  requiredEnv.push('CLIENT_URL');
+}
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  logger.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
+  process.exit(1);
+}
+
 const app = require('./app');
 
 // Ensure uploads directory exists
@@ -38,6 +48,12 @@ const startServer = async () => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   logger.error(`Unhandled Rejection: ${err.message}`);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  logger.error(`Uncaught Exception: ${err.message}`);
   process.exit(1);
 });
 

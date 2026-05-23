@@ -7,6 +7,7 @@ const SharedLink = require('../models/SharedLink');
 const ActivityLog = require('../models/ActivityLog');
 const logger = require('../utils/logger');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
+const { streamRemoteFile } = require('../utils/streamRemoteFile');
 
 /**
  * Share Controller
@@ -146,10 +147,10 @@ const accessSharedFile = asyncHandler(async (req, res) => {
 
   // Check password if protected
   if (sharedLink.password) {
-    const { password } = req.query; // Pass password as query param for download
+    const password = req.body?.password;
 
     if (!password) {
-      throw new AppError('This shared file is password protected. Provide password', 401);
+      throw new AppError('This shared file is password protected. Provide a password in the request body', 401);
     }
 
     const isMatch = await bcrypt.compare(password, sharedLink.password);
@@ -160,12 +161,6 @@ const accessSharedFile = asyncHandler(async (req, res) => {
 
   const file = sharedLink.fileId;
 
-  // Verify file exists on disk
-  const filePath = path.resolve(file.filePath);
-  if (!fs.existsSync(filePath)) {
-    throw new AppError('File no longer exists on server', 404);
-  }
-
   // Increment download count
   sharedLink.downloadCount += 1;
   await sharedLink.save();
@@ -174,6 +169,17 @@ const accessSharedFile = asyncHandler(async (req, res) => {
     via: 'shared-link',
     token: sharedLink.token,
   });
+
+  if (file.storageType === 'cloudinary' && file.filePath?.startsWith('http')) {
+    await streamRemoteFile(file.filePath, res, file.originalName);
+    return;
+  }
+
+  // Verify file exists on disk
+  const filePath = path.resolve(file.filePath);
+  if (!fs.existsSync(filePath)) {
+    throw new AppError('File no longer exists on server', 404);
+  }
 
   // Stream file download
   res.download(filePath, file.originalName);

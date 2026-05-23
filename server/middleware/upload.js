@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require('uuid');
  * - Stores files on disk in /uploads directory
  * - Generates unique filenames using UUID to prevent collisions
  * - Validates file types (blocks dangerous extensions)
- * - Enforces 5MB file size limit
+ * - Enforces 20MB file size limit
  */
 
 // Allowed MIME types
@@ -79,7 +79,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 20 * 1024 * 1024, // 20MB
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 20 * 1024 * 1024, // Default 20MB; override via MAX_FILE_SIZE in .env
   },
 });
 

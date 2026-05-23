@@ -148,7 +148,7 @@ Create `.env` file:
 PORT=5000
 MONGO_URI=your_mongodb_connection
 JWT_SECRET=your_secret
-JWT_REFRESH_SECRET=your_refresh_secret
+CLIENT_URL=http://localhost:5173
 ```
 
 Run backend:

@@ -18,6 +18,7 @@ const generateAccessToken = (userId) => {
  * Generate a long-lived refresh token.
  * Used to obtain new access tokens without re-login (7 days).
  * Uses crypto.randomBytes for unpredictable token generation.
+ * Refresh tokens are random strings stored in the database, not JWTs.
  *
  * @returns {string} Random hex string (64 chars)
  */

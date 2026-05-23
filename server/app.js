@@ -73,8 +73,8 @@ app.use(express.urlencoded({ extended: true }));
 // Parse cookies (required for refresh token)
 app.use(cookieParser());
 
-// Serve uploaded files statically (for previewing images, etc.)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Uploaded files should only be accessed through authenticated download endpoints.
+// The /api/files/download/:id route enforces ownership and storage checks.
 
 // ──────────────────────────────────────────────
 // API Routes

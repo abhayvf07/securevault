@@ -5,6 +5,7 @@ const ActivityLog = require('../models/ActivityLog');
 const logger = require('../utils/logger');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 const uploadService = require('../services/uploadService');
+const { streamRemoteFile } = require('../utils/streamRemoteFile');
 
 /**
  * File Controller
@@ -16,6 +17,10 @@ const uploadService = require('../services/uploadService');
 // @access  Private
 const uploadFile = asyncHandler(async (req, res) => {
   const { folderId } = req.body;
+
+  if (!req.file) {
+    throw new AppError('No file uploaded. Please select a file.', 400);
+  }
 
   // Upload to cloud if configured, otherwise keep local
   const cloudResult = await uploadService.uploadToCloud(req.file.path);
@@ -30,6 +35,7 @@ const uploadFile = asyncHandler(async (req, res) => {
     mimeType: req.file.mimetype,
     folderId: folderId || null,
     storageType: cloudResult.storageType,
+    publicId: cloudResult.publicId || null,
   });
 
   // Log activity
@@ -145,7 +151,7 @@ const deleteFile = asyncHandler(async (req, res) => {
   }
 
   // Delete file from storage (local or cloud)
-  await uploadService.deleteFile(file.filePath, file.storageType || 'local');
+  await uploadService.deleteFile(file.filePath, file.storageType || 'local', file.publicId);
 
   // Delete from database
   await File.findByIdAndDelete(req.params.id);
@@ -223,12 +229,6 @@ const downloadFile = asyncHandler(async (req, res) => {
     throw new AppError('Not authorized to download this file', 403);
   }
 
-  // Verify file exists on disk
-  const filePath = path.resolve(file.filePath);
-  if (!fs.existsSync(filePath)) {
-    throw new AppError('File not found on server', 404);
-  }
-
   // Log activity
   await ActivityLog.create({
     userId: req.user._id,
@@ -240,6 +240,17 @@ const downloadFile = asyncHandler(async (req, res) => {
   });
 
   logger.activity(req.user._id, 'DOWNLOAD', file.originalName);
+
+  if (file.storageType === 'cloudinary' && file.filePath?.startsWith('http')) {
+    await streamRemoteFile(file.filePath, res, file.originalName);
+    return;
+  }
+
+  // Verify file exists on disk
+  const filePath = path.resolve(file.filePath);
+  if (!fs.existsSync(filePath)) {
+    throw new AppError('File not found on server', 404);
+  }
 
   // Stream file download with original name
   res.download(filePath, file.originalName);

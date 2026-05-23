@@ -88,6 +88,7 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         localStorage.removeItem('sv_token');
         localStorage.removeItem('sv_user');
+        window.dispatchEvent(new Event('sv_logout'));
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
@@ -162,11 +163,13 @@ export const shareAPI = {
   create: (fileId, options = {}) => api.post(`/share/${fileId}`, options),
   getInfo: (token) => api.get(`/share/${token}/info`),
   download: async (token, fileName, password = null) => {
-    const params = password ? { password } : {};
-    const response = await api.get(`/share/${token}`, {
-      params,
-      responseType: 'blob',
-    });
+    const response = await api.post(
+      `/share/${token}/download`,
+      { password },
+      {
+        responseType: 'blob',
+      }
+    );
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;

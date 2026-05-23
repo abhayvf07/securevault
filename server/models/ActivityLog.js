@@ -18,7 +18,17 @@ const activityLogSchema = new mongoose.Schema(
     action: {
       type: String,
       required: true,
-      enum: ['UPLOAD', 'DOWNLOAD', 'DELETE', 'RENAME', 'SHARE', 'LOGIN', 'REGISTER'],
+      enum: [
+        'UPLOAD',
+        'DOWNLOAD',
+        'DELETE',
+        'RENAME',
+        'SHARE',
+        'LOGIN',
+        'REGISTER',
+        'CREATE_FOLDER',
+        'DELETE_FOLDER',
+      ],
     },
     resourceType: {
       type: String,

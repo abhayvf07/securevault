@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
  * 2. On access token expiry → client sends refresh token to get new access token
  * 3. On logout → refresh token is deleted from DB
  *
- * Security: Refresh tokens are stored hashed and auto-expire via TTL index.
+ * Security: Refresh tokens are stored in the database and auto-expire via TTL index.
  */
 const refreshTokenSchema = new mongoose.Schema(
   {

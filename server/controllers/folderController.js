@@ -1,5 +1,6 @@
 const Folder = require('../models/Folder');
 const File = require('../models/File');
+const ActivityLog = require('../models/ActivityLog');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 
 /**
@@ -26,6 +27,15 @@ const createFolder = asyncHandler(async (req, res) => {
   const folder = await Folder.create({
     name: name.trim(),
     userId: req.user._id,
+  });
+
+  await ActivityLog.create({
+    userId: req.user._id,
+    action: 'CREATE_FOLDER',
+    resourceType: 'folder',
+    resourceId: folder._id,
+    resourceName: folder.name,
+    ipAddress: req.ip,
   });
 
   res.status(201).json({
@@ -82,6 +92,15 @@ const deleteFolder = asyncHandler(async (req, res) => {
   );
 
   await Folder.findByIdAndDelete(req.params.id);
+
+  await ActivityLog.create({
+    userId: req.user._id,
+    action: 'DELETE_FOLDER',
+    resourceType: 'folder',
+    resourceId: folder._id,
+    resourceName: folder.name,
+    ipAddress: req.ip,
+  });
 
   res.status(200).json({
     success: true,

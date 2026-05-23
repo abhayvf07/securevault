@@ -47,19 +47,50 @@ const getCloudinary = () => {
   return cloudinary;
 };
 
+const getCloudinaryPublicId = (filePath) => {
+  if (!filePath) return null;
+
+  try {
+    const parsedUrl = new URL(filePath);
+    const pathSegments = parsedUrl.pathname.split('/').filter(Boolean);
+    const uploadIndex = pathSegments.indexOf('upload');
+    if (uploadIndex === -1) {
+      const fileName = pathSegments.pop();
+      return fileName ? fileName.replace(path.extname(fileName), '') : null;
+    }
+
+    const versionCandidate = pathSegments[uploadIndex + 1];
+    const publicPath = pathSegments.slice(
+      versionCandidate && /^v\d+$/.test(versionCandidate)
+        ? uploadIndex + 2
+        : uploadIndex + 1
+    );
+
+    const publicIdWithExtension = publicPath.join('/');
+    return publicIdWithExtension
+      ? publicIdWithExtension.replace(path.extname(publicIdWithExtension), '')
+      : null;
+  } catch (err) {
+    const fileName = filePath.split('/').pop();
+    return fileName ? fileName.split('.')[0] : null;
+  }
+};
+
 /**
  * Delete a file from storage.
- * @param {string} filePath - Local file path or Cloudinary public_id
+ * @param {string} filePath - Local file path or Cloudinary URL
  * @param {string} storageType - 'local' or 'cloudinary'
+ * @param {string|null} publicId - Optional Cloudinary public ID
  */
-const deleteFile = async (filePath, storageType = 'local') => {
+const deleteFile = async (filePath, storageType = 'local', publicId = null) => {
   try {
     if (storageType === 'cloudinary' && isCloudinaryConfigured()) {
       const cloud = getCloudinary();
-      // Extract public_id from the URL or path
-      const publicId = filePath.split('/').pop().split('.')[0];
-      await cloud.uploader.destroy(`securevault/${publicId}`);
-      logger.info(`Deleted from Cloudinary: ${publicId}`);
+      const publicIdToDelete = publicId || getCloudinaryPublicId(filePath);
+      if (publicIdToDelete) {
+        await cloud.uploader.destroy(publicIdToDelete);
+        logger.info(`Deleted from Cloudinary: ${publicIdToDelete}`);
+      }
     } else {
       // Local storage
       const resolvedPath = path.resolve(filePath);

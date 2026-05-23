@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     verifyToken();
   }, []);
 
-  // Auto-logout: listen for storage events (e.g. token removed by interceptor)
+  // Auto-logout: listen for storage and custom logout events
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'sv_token' && !e.newValue) {
@@ -60,8 +60,19 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    const handleLogoutEvent = () => {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('sv_token');
+      localStorage.removeItem('sv_user');
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('sv_logout', handleLogoutEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sv_logout', handleLogoutEvent);
+    };
   }, []);
 
   const login = async (email, password) => {
