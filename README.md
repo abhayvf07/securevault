@@ -5,12 +5,6 @@ It allows users to upload, manage, and share files securely with authentication,
 
 ---
 
-## 🌐 Live Demo
-
-👉 Frontend: https://your-frontend-link.vercel.app
-👉 Backend API: https://your-backend-link.onrender.com
----
-
 ## 📸 Preview
 
 ### 🏠 Dashboard
@@ -43,6 +37,7 @@ This project demonstrates:
 * File handling & storage logic
 * Real-world features like sharing, tracking, and validation
 * Clean frontend integration with API
+* Refresh token rotation and secure cookie handling
 
 💡 Built with focus on **backend engineering, security, and scalability**
 
@@ -88,21 +83,30 @@ This project demonstrates:
 
 ### Frontend
 
-* React (Vite)
+* React 19 + Vite
 * Tailwind CSS
 * Axios
+* React Router DOM
 
 ### Backend
 
 * Node.js
 * Express.js
-* MongoDB (Mongoose)
+* MongoDB / Mongoose
+* JWT access + refresh token auth
+* bcryptjs
+* Multer
+* Zod
+* Cloudinary (optional)
+* Helmet
+* express-rate-limit
+* cookie-parser
 
-### Tools & Libraries
+### Additional Libraries
 
-* JWT (Authentication)
-* Multer (File Upload)
-* Zod (Validation)
+* uuid
+* cors
+* dotenv
 
 ---
 
@@ -184,28 +188,30 @@ npm run dev
 
 ## 🔒 Security Highlights
 
-* File type validation
-* Secure authentication flow
+* JWT access + refresh token authentication
+* httpOnly refresh cookie for secure token refresh
+* File type validation with Multer
 * Environment variable protection
 * API-level validation using Zod
-* Rate limiting (if implemented)
+* Express rate limiting via express-rate-limit
+* Helmet security headers
 
 ---
 
 ## 📊 Future Improvements
 
-* Refresh token authentication system
-* Cloud storage (AWS S3 / Cloudinary)
-* Drag & drop file system
-* Advanced analytics dashboard
-* Search & filtering
+* Deploy frontend and backend to production
+* Add AWS S3 support alongside Cloudinary
+* Expand test coverage across backend APIs
+* Implement file move between folders
+* Add user collaboration and real-time sharing updates
 
 ---
 
 ## 🧪 Testing
 
 * Basic API test structure included
-* Easily extendable for full test coverag
+* Easily extendable for full test coverage
 
 ## 🤝 Contributing
 

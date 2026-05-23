@@ -11,10 +11,29 @@ const { AppError, asyncHandler } = require('../middleware/errorHandler');
  * Uses short-lived access tokens (15min) + long-lived refresh tokens (7d).
  */
 
+const parseDurationMs = (value, defaultMs) => {
+  if (!value) return defaultMs;
+  const normalized = value.trim().toLowerCase();
+  const match = /^([0-9]+)(s|m|h|d)$/.exec(normalized);
+  if (!match) return defaultMs;
+
+  const amount = Number(match[1]);
+  const unit = match[2];
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+
+  return amount * multipliers[unit];
+};
+
 // ─── Helper: Save refresh token to DB and set httpOnly cookie ───
 const issueRefreshToken = async (userId, res) => {
   const refreshToken = generateRefreshToken();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  const refreshExpiresMs = parseDurationMs(process.env.JWT_REFRESH_EXPIRES_IN, 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + refreshExpiresMs);
 
   await RefreshToken.create({
     userId,
@@ -27,7 +46,7 @@ const issueRefreshToken = async (userId, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: refreshExpiresMs,
     path: '/api/auth', // Only sent to auth endpoints
   });
 
