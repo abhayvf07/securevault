@@ -3,12 +3,24 @@ import axios from 'axios';
 /**
  * API Service
  * Centralized Axios instance with:
- * - Auto token attachment (request interceptor)
+ * - Auto token attachment (request interceptor) — token stored in memory via context
  * - Auto token refresh on 401 (response interceptor)
  * - All API endpoints grouped by feature
+ * 
+ * Security note: Access token is stored in React memory (AuthContext state), not localStorage.
+ * Only refresh token is stored in httpOnly cookie.
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Token store — managed by AuthContext
+let currentToken = null;
+
+export const setApiToken = (token) => {
+  currentToken = token;
+};
+
+export const getApiToken = () => currentToken;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -19,10 +31,11 @@ const api = axios.create({
   },
 });
 
-// ─── Request Interceptor: Attach auth token ───
+// ─── Request Interceptor: Attach auth token from memory ───
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('sv_token');
+    // Get token from memory (AuthContext), not localStorage
+    const token = currentToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -75,7 +88,9 @@ api.interceptors.response.use(
         // Try to refresh the access token
         const res = await api.post('/auth/refresh');
         const newToken = res.data.data.token;
-        localStorage.setItem('sv_token', newToken);
+        
+        // Update token in memory (AuthContext will be notified via updateToken)
+        setApiToken(newToken);
 
         // Retry all queued requests
         processQueue(null, newToken);
@@ -86,9 +101,11 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed — force logout
         processQueue(refreshError, null);
-        localStorage.removeItem('sv_token');
-        localStorage.removeItem('sv_user');
+        setApiToken(null); // Clear token from memory
+        
+        // Dispatch logout event to AuthContext
         window.dispatchEvent(new Event('sv_logout'));
+        
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }

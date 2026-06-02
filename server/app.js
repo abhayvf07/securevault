@@ -54,6 +54,23 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Upload rate limit: 10 uploads per minute per user IP (prevents disk/storage abuse)
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many uploads. Please wait a moment before uploading again.',
+  },
+  skip: (req) => {
+    // Skip limiting for non-upload requests
+    return req.method !== 'POST' || !req.path.includes('/files/upload');
+  },
+});
+app.use('/api/files/upload', uploadLimiter);
+
 // ──────────────────────────────────────────────
 // General Middleware
 // ──────────────────────────────────────────────

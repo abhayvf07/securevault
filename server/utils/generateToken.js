@@ -26,9 +26,7 @@ const generateRefreshToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Keep backward-compatible default export for existing code
-const generateToken = generateAccessToken;
-
-module.exports = generateToken;
-module.exports.generateAccessToken = generateAccessToken;
-module.exports.generateRefreshToken = generateRefreshToken;
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+};

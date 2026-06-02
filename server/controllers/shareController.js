@@ -4,10 +4,10 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const File = require('../models/File');
 const SharedLink = require('../models/SharedLink');
-const ActivityLog = require('../models/ActivityLog');
 const logger = require('../utils/logger');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 const { streamRemoteFile } = require('../utils/streamRemoteFile');
+const { logUserActivity } = require('../services/activityService');
 
 /**
  * Share Controller
@@ -37,17 +37,12 @@ const createShareLink = asyncHandler(async (req, res) => {
     fileId: file._id,
     token: uuidv4(),
     createdBy: req.user._id,
+    password: password || null, // Will be hashed by pre-save hook if provided
   };
 
   // Set expiry if provided
   if (expiryHours) {
     linkData.expiryDate = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
-  }
-
-  // Hash password if provided (don't store in plain text)
-  if (password) {
-    const salt = await bcrypt.genSalt(10);
-    linkData.password = await bcrypt.hash(password, salt);
   }
 
   // Set download limit if provided
@@ -58,23 +53,19 @@ const createShareLink = asyncHandler(async (req, res) => {
   const sharedLink = await SharedLink.create(linkData);
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'SHARE',
     resourceType: 'file',
     resourceId: file._id,
     resourceName: file.originalName,
+    ipAddress: req.ip,
     details: {
       token: sharedLink.token,
       hasExpiry: !!expiryHours,
       hasPassword: !!password,
       downloadLimit: downloadLimit || 'unlimited',
     },
-    ipAddress: req.ip,
-  });
-
-  logger.activity(req.user._id, 'SHARE', file.originalName, {
-    token: sharedLink.token,
   });
 
   // Build shareable URL
@@ -153,7 +144,8 @@ const accessSharedFile = asyncHandler(async (req, res) => {
       throw new AppError('This shared file is password protected. Provide a password in the request body', 401);
     }
 
-    const isMatch = await bcrypt.compare(password, sharedLink.password);
+    // Use model's comparePassword method for password validation
+    const isMatch = await sharedLink.comparePassword(password);
     if (!isMatch) {
       throw new AppError('Incorrect password', 401);
     }
@@ -161,9 +153,10 @@ const accessSharedFile = asyncHandler(async (req, res) => {
 
   const file = sharedLink.fileId;
 
-  // Increment download count
-  sharedLink.downloadCount += 1;
-  await sharedLink.save();
+  // Increment download count securely avoiding race conditions
+  await SharedLink.findByIdAndUpdate(sharedLink._id, {
+    $inc: { downloadCount: 1 }
+  });
 
   logger.activity('anonymous', 'DOWNLOAD', file.originalName, {
     via: 'shared-link',
@@ -176,7 +169,13 @@ const accessSharedFile = asyncHandler(async (req, res) => {
   }
 
   // Verify file exists on disk
+  const uploadsDir = path.resolve(__dirname, '..', 'uploads');
   const filePath = path.resolve(file.filePath);
+  
+  if (!filePath.startsWith(uploadsDir + path.sep)) {
+    throw new AppError('Invalid file path', 403);
+  }
+
   if (!fs.existsSync(filePath)) {
     throw new AppError('File no longer exists on server', 404);
   }

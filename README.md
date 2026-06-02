@@ -152,13 +152,26 @@ cd server
 npm install
 ```
 
-Create `.env` file:
+Create `.env` file (copy from `.env.example` and fill in your values):
 
 ```id="env01"
 PORT=5000
-MONGO_URI=your_mongodb_connection
-JWT_SECRET=your_secret
+NODE_ENV=development
+MONGO_URI=mongodb+srv://your_user:your_password@cluster.mongodb.net/securevault
+JWT_SECRET=generate_random_secret_here
+JWT_REFRESH_SECRET=generate_another_random_secret_here
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+MAX_FILE_SIZE=5242880
 CLIENT_URL=http://localhost:5173
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+To generate secure random JWT secrets:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 Run backend:
@@ -167,6 +180,8 @@ Run backend:
 npm run dev
 ```
 
+The backend will be available at `http://localhost:5000`
+
 ---
 
 ### 3️⃣ Setup Frontend
@@ -174,27 +189,77 @@ npm run dev
 ```bash id="frontend01"
 cd client
 npm install
+```
+
+Create `.env` file (optional — defaults to `http://localhost:5000/api`):
+
+```id="env02"
+VITE_API_URL=http://localhost:5000/api
+```
+
+Run frontend:
+
+```bash
 npm run dev
 ```
+
+The frontend will be available at `http://localhost:5173`
+
+---
+
+### 4️⃣ Running Tests (Optional)
+
+```bash id="tests01"
+cd server
+npm test
+```
+
+This runs Jest tests for authentication endpoints.
 
 ---
 
 ## 🚀 Deployment
 
-* Frontend: Vercel / Netlify
-* Backend: Render / Railway
+* **Frontend**: Vercel / Netlify (run `npm run build` to create optimized build)
+* **Backend**: Render / Railway (ensure all environment variables are set in production)
+
+### Important: Production Setup
+Before deploying to production:
+1. Generate new JWT secrets (never reuse development secrets)
+2. Set `NODE_ENV=production`
+3. Configure MongoDB for production replica set (for transactions)
+4. Enable HTTPS and set `secure: true` for cookies
+5. Update `CLIENT_URL` to your production frontend URL
+6. Set up proper logging and monitoring
 
 ---
 
-## 🔒 Security Highlights
+## 🔒 Security Features
 
-* JWT access + refresh token authentication
-* httpOnly refresh cookie for secure token refresh
-* File type validation with Multer
-* Environment variable protection
-* API-level validation using Zod
-* Express rate limiting via express-rate-limit
-* Helmet security headers
+### Authentication & Authorization
+* **JWT Access Token** (15 min) + **Refresh Token** (7 days) rotation
+* **httpOnly Cookies** for secure refresh token storage (prevents XSS)
+* **Access token in memory only** (not in localStorage) for XSS protection
+* **Ownership verification** on all file operations (prevents IDOR)
+
+### File Security
+* **Path traversal protection** — uploaded files cannot access parent directories
+* **Magic byte validation** — actual file content is verified, not just MIME type
+* **Dangerous extension blocklist** — .exe, .bat, .sh, .dll, etc. rejected
+* **UUID filename generation** — prevents filename-based attacks
+* **File size limits** — configurable max file size (default 5MB)
+
+### API Security
+* **Rate limiting** — 100 req/15min general, 5 req/15min auth, 10 req/1min uploads
+* **Zod schema validation** — all user inputs validated server-side
+* **Helmet security headers** — prevents common web vulnerabilities
+* **CORS configured** — frontend can only communicate from trusted origin
+* **bcryptjs hashing** — passwords hashed with 12 salt rounds
+
+### Password Security
+* **Strong password policy** enforced at registration (uppercase, lowercase, numbers, special chars)
+* **Shared link passwords** hashed with bcryptjs (not stored in plain text)
+* **Session-based auth** — invalid tokens automatically logged out
 
 ---
 

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 /**
  * SharedLink Model
@@ -7,7 +8,7 @@ const mongoose = require('mongoose');
  * Features:
  * - Token-based access (UUID)
  * - Optional expiry date
- * - Optional password protection
+ * - Optional password protection (hashed with bcrypt)
  * - Optional download limit (tracks remaining downloads)
  */
 const sharedLinkSchema = new mongoose.Schema(
@@ -49,6 +50,39 @@ const sharedLinkSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+/**
+ * Pre-save hook: Hash password if modified
+ * Ensures password is always hashed, regardless of code path
+ */
+sharedLinkSchema.pre('save', async function (next) {
+  // Only hash if password is new or modified
+  if (!this.isModified('password')) {
+    return next();
+  }
+
+  // Skip if password is null (no password set)
+  if (!this.password) {
+    return next();
+  }
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Instance method: Compare password against hash
+ * @param {string} candidatePassword - Plain text password to verify
+ * @returns {Promise<boolean>} True if password matches
+ */
+sharedLinkSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
+};
 
 /**
  * Check if the shared link is still valid.

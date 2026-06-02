@@ -1,33 +1,16 @@
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
-const ActivityLog = require('../models/ActivityLog');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateToken');
 const logger = require('../utils/logger');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
+const { parseDurationMs } = require('../utils/timeParser');
+const { logUserActivity } = require('../services/activityService');
 
 /**
  * Auth Controller
  * Handles user registration, login, token refresh, and logout.
  * Uses short-lived access tokens (15min) + long-lived refresh tokens (7d).
  */
-
-const parseDurationMs = (value, defaultMs) => {
-  if (!value) return defaultMs;
-  const normalized = value.trim().toLowerCase();
-  const match = /^([0-9]+)(s|m|h|d)$/.exec(normalized);
-  if (!match) return defaultMs;
-
-  const amount = Number(match[1]);
-  const unit = match[2];
-  const multipliers = {
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-  };
-
-  return amount * multipliers[unit];
-};
 
 // ─── Helper: Save refresh token to DB and set httpOnly cookie ───
 const issueRefreshToken = async (userId, res) => {
@@ -73,7 +56,7 @@ const register = asyncHandler(async (req, res) => {
   await issueRefreshToken(user._id, res);
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: user._id,
     action: 'REGISTER',
     resourceType: 'user',
@@ -104,6 +87,10 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
+  if (typeof email !== 'string') {
+    throw new AppError('Invalid email format', 400);
+  }
+
   // Find user and explicitly include password field
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
@@ -122,7 +109,7 @@ const login = asyncHandler(async (req, res) => {
   await issueRefreshToken(user._id, res);
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: user._id,
     action: 'LOGIN',
     resourceType: 'user',

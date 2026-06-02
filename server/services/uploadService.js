@@ -92,8 +92,16 @@ const deleteFile = async (filePath, storageType = 'local', publicId = null) => {
         logger.info(`Deleted from Cloudinary: ${publicIdToDelete}`);
       }
     } else {
-      // Local storage
+      // Local storage — with path traversal protection
+      const uploadsDir = path.resolve(__dirname, '..', 'uploads');
       const resolvedPath = path.resolve(filePath);
+      
+      // Security: Ensure the file path is within uploads directory
+      if (!resolvedPath.startsWith(uploadsDir + path.sep)) {
+        logger.error(`Attempted file deletion outside uploads directory: ${resolvedPath}`);
+        return; // Silently skip — don't throw to avoid blocking DB cleanup
+      }
+      
       if (fs.existsSync(resolvedPath)) {
         fs.unlinkSync(resolvedPath);
         logger.info(`Deleted local file: ${resolvedPath}`);

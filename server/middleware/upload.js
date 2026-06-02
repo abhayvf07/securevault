@@ -1,6 +1,8 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { fileTypeFromFile } = require('file-type');
 
 /**
  * File Upload Middleware (Multer Configuration)
@@ -8,7 +10,8 @@ const { v4: uuidv4 } = require('uuid');
  * - Stores files on disk in /uploads directory
  * - Generates unique filenames using UUID to prevent collisions
  * - Validates file types (blocks dangerous extensions)
- * - Enforces 20MB file size limit
+ * - Validates actual file magic bytes (prevents MIME-type spoofing)
+ * - Enforces 5MB file size limit (configurable via MAX_FILE_SIZE env)
  */
 
 // Allowed MIME types
@@ -79,23 +82,60 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 20 * 1024 * 1024, // Default 20MB; override via MAX_FILE_SIZE in .env
+    // Use MAX_FILE_SIZE from .env (default 5MB = 5242880 bytes)
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
   },
 });
 
 /**
- * Middleware wrapper to handle Multer errors with standardized responses.
+ * Validate file magic bytes (actual file content type, not spoofed MIME)
+ * Prevents attackers from uploading .exe as .jpg by just renaming
+ */
+const validateFileMagicBytes = async (filePath, declaredMimeType) => {
+  try {
+    const fileType = await fileTypeFromFile(filePath);
+    
+    // If file-type can't determine the type, allow it (e.g., plain text files)
+    if (!fileType) {
+      return { valid: true, actualType: null };
+    }
+
+    // Check if actual MIME type matches declared MIME type
+    if (fileType.mime === declaredMimeType) {
+      return { valid: true, actualType: fileType.mime };
+    }
+
+    // MIME mismatch detected — potential spoofing attack
+    return {
+      valid: false,
+      reason: `File content (${fileType.mime}) does not match declared type (${declaredMimeType})`,
+      actualType: fileType.mime,
+    };
+  } catch (err) {
+    // If magic byte check fails, reject the file
+    return {
+      valid: false,
+      reason: `Could not verify file type: ${err.message}`,
+      actualType: null,
+    };
+  }
+};
+
+/**
+ * Middleware wrapper to handle Multer errors and perform magic-byte validation
  */
 const uploadMiddleware = (req, res, next) => {
   const singleUpload = upload.single('file');
 
-  singleUpload(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
+  singleUpload(req, res, async (err) => {
+    if (err instanceof multer.MultierError) {
       // Multer-specific errors
       if (err.code === 'LIMIT_FILE_SIZE') {
+        const maxSize = parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024;
+        const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
         return res.status(400).json({
           success: false,
-          message: 'File too large. Maximum size is 20MB',
+          message: `File too large. Maximum size is ${maxSizeMB}MB`,
         });
       }
       return res.status(400).json({
@@ -105,7 +145,7 @@ const uploadMiddleware = (req, res, next) => {
     }
 
     if (err) {
-      // Custom filter errors
+      // Custom filter errors or other errors
       return res.status(400).json({
         success: false,
         message: err.message,
@@ -117,6 +157,18 @@ const uploadMiddleware = (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'No file provided. Please select a file to upload',
+      });
+    }
+
+    // Validate file magic bytes to prevent MIME-type spoofing
+    const validation = await validateFileMagicBytes(req.file.path, req.file.mimetype);
+    if (!validation.valid) {
+      // Delete the invalid file
+      fs.unlinkSync(req.file.path);
+      
+      return res.status(400).json({
+        success: false,
+        message: validation.reason,
       });
     }
 

@@ -1,11 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const File = require('../models/File');
-const ActivityLog = require('../models/ActivityLog');
-const logger = require('../utils/logger');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 const uploadService = require('../services/uploadService');
 const { streamRemoteFile } = require('../utils/streamRemoteFile');
+const { logUserActivity } = require('../services/activityService');
 
 /**
  * File Controller
@@ -39,17 +38,15 @@ const uploadFile = asyncHandler(async (req, res) => {
   });
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'UPLOAD',
     resourceType: 'file',
     resourceId: file._id,
     resourceName: file.originalName,
-    details: { size: file.size, mimeType: file.mimeType },
     ipAddress: req.ip,
+    details: { size: file.size, mimeType: file.mimeType },
   });
-
-  logger.activity(req.user._id, 'UPLOAD', file.originalName, { size: file.size });
 
   res.status(201).json({
     success: true,
@@ -157,7 +154,7 @@ const deleteFile = asyncHandler(async (req, res) => {
   await File.findByIdAndDelete(req.params.id);
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'DELETE',
     resourceType: 'file',
@@ -165,8 +162,6 @@ const deleteFile = asyncHandler(async (req, res) => {
     resourceName: file.originalName,
     ipAddress: req.ip,
   });
-
-  logger.activity(req.user._id, 'DELETE', file.originalName);
 
   res.status(200).json({
     success: true,
@@ -195,17 +190,15 @@ const renameFile = asyncHandler(async (req, res) => {
   await file.save();
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'RENAME',
     resourceType: 'file',
     resourceId: file._id,
     resourceName: newName,
-    details: { oldName, newName },
     ipAddress: req.ip,
+    details: { oldName, newName },
   });
-
-  logger.activity(req.user._id, 'RENAME', `${oldName} → ${newName}`);
 
   res.status(200).json({
     success: true,
@@ -230,7 +223,7 @@ const downloadFile = asyncHandler(async (req, res) => {
   }
 
   // Log activity
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'DOWNLOAD',
     resourceType: 'file',
@@ -239,15 +232,20 @@ const downloadFile = asyncHandler(async (req, res) => {
     ipAddress: req.ip,
   });
 
-  logger.activity(req.user._id, 'DOWNLOAD', file.originalName);
-
   if (file.storageType === 'cloudinary' && file.filePath?.startsWith('http')) {
     await streamRemoteFile(file.filePath, res, file.originalName);
     return;
   }
 
-  // Verify file exists on disk
+  // Security: Verify local file path is within uploads directory (path traversal protection)
+  const uploadsDir = path.resolve(__dirname, '..', 'uploads');
   const filePath = path.resolve(file.filePath);
+  
+  if (!filePath.startsWith(uploadsDir + path.sep)) {
+    throw new AppError('Invalid file path', 403);
+  }
+
+  // Verify file exists on disk
   if (!fs.existsSync(filePath)) {
     throw new AppError('File not found on server', 404);
   }

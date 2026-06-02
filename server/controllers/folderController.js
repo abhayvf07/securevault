@@ -1,6 +1,6 @@
 const Folder = require('../models/Folder');
 const File = require('../models/File');
-const ActivityLog = require('../models/ActivityLog');
+const { logUserActivity } = require('../services/activityService');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 
 /**
@@ -29,7 +29,7 @@ const createFolder = asyncHandler(async (req, res) => {
     userId: req.user._id,
   });
 
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'CREATE_FOLDER',
     resourceType: 'folder',
@@ -93,7 +93,7 @@ const deleteFolder = asyncHandler(async (req, res) => {
 
   await Folder.findByIdAndDelete(req.params.id);
 
-  await ActivityLog.create({
+  await logUserActivity({
     userId: req.user._id,
     action: 'DELETE_FOLDER',
     resourceType: 'folder',
