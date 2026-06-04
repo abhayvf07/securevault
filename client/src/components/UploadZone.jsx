@@ -3,6 +3,8 @@ import { Upload, CloudUpload, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { filesAPI } from '../services/api';
 
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
 /**
  * UploadZone
  * Drag-and-drop + click-to-upload file area.
@@ -14,41 +16,7 @@ const UploadZone = ({ folderId, onUploadComplete }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
 
-  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      uploadFile(files[0]);
-    }
-  }, [folderId]);
-
-  const handleFileSelect = (e) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-      uploadFile(files[0]);
-    }
-    // Reset input so the same file can be selected again
-    e.target.value = '';
-  };
-
-  const uploadFile = async (file) => {
+  const uploadFile = useCallback(async (file) => {
     // Client-side validation
     if (file.size > MAX_SIZE) {
       toast.error('File too large. Maximum size is 5MB');
@@ -72,7 +40,13 @@ const UploadZone = ({ folderId, onUploadComplete }) => {
         formData.append('folderId', folderId);
       }
 
-      await filesAPI.upload(formData);
+      await filesAPI.upload(formData, {
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+          setUploadProgress(percent);
+        },
+      });
+
       toast.success(`"${file.name}" uploaded successfully!`);
       onUploadComplete(); // Refresh file list
     } catch (err) {
@@ -81,6 +55,38 @@ const UploadZone = ({ folderId, onUploadComplete }) => {
       setIsUploading(false);
       setUploadProgress(0);
     }
+  }, [folderId, onUploadComplete]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      uploadFile(files[0]);
+    }
+  }, [uploadFile]);
+
+  const handleFileSelect = (e) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      uploadFile(files[0]);
+    }
+    // Reset input so the same file can be selected again
+    e.target.value = '';
   };
 
   return (
@@ -112,6 +118,13 @@ const UploadZone = ({ folderId, onUploadComplete }) => {
         <div className="flex flex-col items-center gap-3 animate-pulse-soft">
           <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
           <p className="text-dark-300 font-medium">Uploading...</p>
+          <div className="w-full h-2 rounded-full bg-dark-800 overflow-hidden mt-2">
+            <div
+              className="h-full bg-primary-500 transition-all duration-200"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+          <p className="text-xs text-dark-400">{uploadProgress}%</p>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-3">

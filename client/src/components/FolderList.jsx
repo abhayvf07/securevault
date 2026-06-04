@@ -53,7 +53,7 @@ const FolderList = ({
   };
 
   return (
-    <aside className="w-64 flex-shrink-0 glass-card rounded-none border-t-0 border-b-0 border-l-0 p-4 flex flex-col h-full overflow-hidden">
+    <aside className="w-64 shrink-0 glass-card rounded-none border-t-0 border-b-0 border-l-0 p-4 flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold text-dark-300 uppercase tracking-wider">Folders</h2>
         <button
@@ -103,7 +103,7 @@ const FolderList = ({
             }`}
           id="all-files-btn"
         >
-          <Home className="w-4 h-4 flex-shrink-0" />
+          <Home className="w-4 h-4 shrink-0" />
           <span className="truncate flex-1 text-left">All Files</span>
         </button>
 
@@ -122,7 +122,7 @@ const FolderList = ({
                   : 'text-dark-300 hover:bg-dark-800 hover:text-dark-200'
                 }`}
             >
-              <Folder className="w-4 h-4 flex-shrink-0" />
+              <Folder className="w-4 h-4 shrink-0" />
               <span className="truncate flex-1 text-left">{folder.name}</span>
               <span className="text-xs text-dark-500">{folder.fileCount}</span>
               <button

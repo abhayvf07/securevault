@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,6 +18,18 @@ import SharedFilePage from './pages/SharedFilePage';
  * /activity        — Activity history (protected)
  * /shared/:token   — Shared file access (public)
  */
+const LogoutRedirector = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleLogout = () => navigate('/login');
+    window.addEventListener('sv_logout', handleLogout);
+    return () => window.removeEventListener('sv_logout', handleLogout);
+  }, [navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -43,6 +56,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        <LogoutRedirector />
       </Router>
 
       {/* Global toast notifications */}

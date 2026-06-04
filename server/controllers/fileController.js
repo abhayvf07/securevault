@@ -1,10 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const File = require('../models/File');
+const SharedLink = require('../models/SharedLink');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
 const uploadService = require('../services/uploadService');
 const { streamRemoteFile } = require('../utils/streamRemoteFile');
 const { logUserActivity } = require('../services/activityService');
+
+// Escape special regex characters to prevent ReDoS attacks
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * File Controller
@@ -78,7 +82,7 @@ const getFiles = asyncHandler(async (req, res) => {
 
   // Search by file name
   if (search) {
-    query.originalName = { $regex: search, $options: 'i' };
+    query.originalName = { $regex: escapeRegex(search), $options: 'i' };
   }
 
   // Filter by MIME type category
@@ -149,6 +153,9 @@ const deleteFile = asyncHandler(async (req, res) => {
 
   // Delete file from storage (local or cloud)
   await uploadService.deleteFile(file.filePath, file.storageType || 'local', file.publicId);
+
+  // Clean up any shared links referencing this file
+  await SharedLink.deleteMany({ fileId: file._id });
 
   // Delete from database
   await File.findByIdAndDelete(req.params.id);

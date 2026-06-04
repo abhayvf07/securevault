@@ -4,18 +4,12 @@ const User = require('../models/User');
 /**
  * Authentication Middleware
  *
- * Strategy: localStorage + Authorization header (Option A)
+ * Strategy: Authorization header for access tokens + httpOnly cookie for refresh tokens
  *
- * WHY localStorage over httpOnly cookies:
- * - Simpler implementation for learning/portfolio projects
- * - Works easily with React SPA + Axios interceptors
- * - No CSRF concerns (cookies are vulnerable to CSRF)
- * - Trade-off: vulnerable to XSS (mitigated by Helmet CSP headers)
- *
- * For production apps, httpOnly cookies + refresh tokens (Option B) is more secure,
- * but adds complexity with CSRF tokens and cookie configuration.
- *
- * The token is sent in the Authorization header as: Bearer <token>
+ * Access tokens are expected in the Authorization header as: Bearer <token>
+ * Refresh tokens are handled separately via a secure httpOnly cookie on the client.
+ * This allows the frontend to keep the short-lived access token in memory while
+ * the refresh token remains inaccessible to JavaScript.
  */
 const protect = async (req, res, next) => {
   try {

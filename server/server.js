@@ -26,7 +26,16 @@ if (!fs.existsSync(uploadsDir)) {
   logger.info('Created uploads directory');
 }
 
-const PORT = process.env.PORT || 5000;
+const DEFAULT_PORT = 5000;
+const initialPort = Number(process.env.PORT) || DEFAULT_PORT;
+
+const listenOnPort = (port) =>
+  new Promise((resolve, reject) => {
+    const server = app
+      .listen(port)
+      .once('listening', () => resolve({ server, port }))
+      .once('error', (error) => reject(error));
+  });
 
 // Connect to MongoDB and start server
 const startServer = async () => {
@@ -34,11 +43,35 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     logger.success(`MongoDB connected: ${mongoose.connection.host}`);
 
-    app.listen(PORT, () => {
-      logger.success(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-      logger.info(`API:    http://localhost:${PORT}/api`);
-      logger.info(`Health: http://localhost:${PORT}/api/health`);
-    });
+    let port = initialPort;
+    while (true) {
+      try {
+        const { server, port: boundPort } = await listenOnPort(port);
+        logger.success(`Server running in ${process.env.NODE_ENV} mode on port ${boundPort}`);
+        logger.info(`API:    http://localhost:${boundPort}/api`);
+        logger.info(`Health: http://localhost:${boundPort}/api/health`);
+        server.on('error', (error) => {
+          if (error.code === 'EADDRINUSE') {
+            logger.error(`Port ${boundPort} is already in use.`);
+          } else {
+            logger.error(`Server error: ${error.message}`);
+          }
+          process.exit(1);
+        });
+        break;
+      } catch (error) {
+        if (error.code === 'EADDRINUSE') {
+          if (process.env.PORT) {
+            logger.warn(`Port ${port} is already in use; falling back to ${port + 1}.`);
+          } else {
+            logger.warn(`Port ${port} is in use, trying ${port + 1}...`);
+          }
+          port += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);
@@ -47,13 +80,13 @@ const startServer = async () => {
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-  logger.error(`Unhandled Rejection: ${err.message}`);
+  logger.error(`Unhandled Rejection: ${err?.message || String(err)}`);
   process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-  logger.error(`Uncaught Exception: ${err.message}`);
+  logger.error(`Uncaught Exception: ${err?.message || String(err)}`);
   process.exit(1);
 });
 

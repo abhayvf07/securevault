@@ -13,7 +13,6 @@ import { filesAPI, shareAPI } from '../services/api';
  * Includes inline rename, and a share modal with options.
  */
 const FileCard = ({ file, onFileChange }) => {
-  const [showActions, setShowActions] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(file.originalName);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -50,10 +49,9 @@ const FileCard = ({ file, onFileChange }) => {
     try {
       await filesAPI.download(file._id, file.originalName);
       toast.success('Download started');
-    } catch (err) {
+    } catch {
       toast.error('Download failed');
     }
-    setShowActions(false);
   };
 
   const handleDelete = async () => {
@@ -65,7 +63,6 @@ const FileCard = ({ file, onFileChange }) => {
     } catch (err) {
       toast.error(err.response?.data?.message || 'Delete failed');
     }
-    setShowActions(false);
   };
 
   const handleRename = async () => {
@@ -111,7 +108,7 @@ const FileCard = ({ file, onFileChange }) => {
       <div className="glass-card-hover p-4 animate-fade-in">
         <div className="flex items-start gap-3">
           {/* File Icon */}
-          <div className="w-10 h-10 rounded-lg bg-dark-800 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-dark-800 flex items-center justify-center shrink-0">
             <FileIcon mimeType={file.mimeType} size={20} />
           </div>
 
@@ -147,7 +144,7 @@ const FileCard = ({ file, onFileChange }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 shrink-0">
             <button onClick={handleDownload} className="btn-ghost p-1.5" title="Download">
               <Download className="w-4 h-4" />
             </button>

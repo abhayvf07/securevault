@@ -98,6 +98,11 @@ const getSharedFileInfo = asyncHandler(async (req, res) => {
     throw new AppError('Shared link not found or invalid', 404);
   }
 
+  // Check if referenced file still exists
+  if (!sharedLink.fileId) {
+    throw new AppError('The file associated with this link no longer exists', 404);
+  }
+
   // Check validity
   const validity = sharedLink.isValid();
   if (!validity.valid) {
@@ -128,6 +133,11 @@ const accessSharedFile = asyncHandler(async (req, res) => {
 
   if (!sharedLink) {
     throw new AppError('Shared link not found or invalid', 404);
+  }
+
+  // Check if referenced file still exists
+  if (!sharedLink.fileId) {
+    throw new AppError('The file associated with this link no longer exists', 404);
   }
 
   // Check validity (expiry + download limit)

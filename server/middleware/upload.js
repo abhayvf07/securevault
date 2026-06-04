@@ -2,7 +2,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const { fileTypeFromFile } = require('file-type');
 
 /**
  * File Upload Middleware (Multer Configuration)
@@ -93,8 +92,9 @@ const upload = multer({
  */
 const validateFileMagicBytes = async (filePath, declaredMimeType) => {
   try {
+    const { fileTypeFromFile } = await import('file-type');
     const fileType = await fileTypeFromFile(filePath);
-    
+
     // If file-type can't determine the type, allow it (e.g., plain text files)
     if (!fileType) {
       return { valid: true, actualType: null };
@@ -128,7 +128,7 @@ const uploadMiddleware = (req, res, next) => {
   const singleUpload = upload.single('file');
 
   singleUpload(req, res, async (err) => {
-    if (err instanceof multer.MultierError) {
+    if (err instanceof multer.MulterError) {
       // Multer-specific errors
       if (err.code === 'LIMIT_FILE_SIZE') {
         const maxSize = parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024;

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const ActivityLog = require('../models/ActivityLog');
 const File = require('../models/File');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -60,7 +61,7 @@ const getActivityLogs = asyncHandler(async (req, res) => {
 // @route   GET /api/activity/analytics
 // @access  Private
 const getAnalytics = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
+  const userId = new mongoose.Types.ObjectId(req.user._id);
 
   // Run aggregations in parallel for performance
   const [

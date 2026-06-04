@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { Shield, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -63,7 +63,7 @@ const LoginPage = () => {
         <div className="glass-card p-8 glow animate-scale-in">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-xl shadow-primary-500/25">
+            <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-xl shadow-primary-500/25">
               <Shield className="w-7 h-7 text-white" />
             </div>
           </div>

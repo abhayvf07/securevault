@@ -82,7 +82,7 @@ const SharedFilePage = () => {
         <div className="glass-card p-8 glow animate-scale-in">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
+            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
               <Shield className="w-6 h-6 text-white" />
             </div>
           </div>
@@ -112,7 +112,7 @@ const SharedFilePage = () => {
               {/* File Info */}
               <div className="bg-dark-800/60 rounded-xl p-5 mb-5">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-dark-700 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-dark-700 flex items-center justify-center shrink-0">
                     <FileIcon mimeType={fileInfo.mimeType} size={24} />
                   </div>
                   <div className="flex-1 min-w-0">

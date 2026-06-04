@@ -1,7 +1,8 @@
 /**
  * Simple activity logger utility.
  * Logs user actions to console with timestamps.
- * In production, this would write to a logging service or file.
+ * In production, this can be swapped with Winston/Pino or a hosted log service.
+ * Note: this wrapper is intentionally simple and ready to be replaced with a more robust logger.
  */
 
 const chalk = {

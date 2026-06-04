@@ -13,7 +13,7 @@ const Skeleton = ({ className = '' }) => (
 export const FileCardSkeleton = () => (
   <div className="glass-card p-4 animate-fade-in">
     <div className="flex items-start gap-3">
-      <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+      <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
       <div className="flex-1">
         <Skeleton className="h-4 w-3/4 mb-2" />
         <div className="flex gap-3">

@@ -3,7 +3,6 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
-const path = require('path');
 const { errorHandler } = require('./middleware/errorHandler');
 
 // Import routes
@@ -16,11 +15,21 @@ const activityRoutes = require('./routes/activityRoutes');
 const app = express();
 
 // ──────────────────────────────────────────────
-// Security Middleware
+// CORS — Must be FIRST so preflight OPTIONS requests get proper headers
 // ──────────────────────────────────────────────
 
 // Trust proxy (needed for accurate IP behind Render/Railway/Vercel)
 app.set('trust proxy', 1);
+
+// CORS: Allow frontend to communicate with backend
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true, // Required for httpOnly cookies
+}));
+
+// ──────────────────────────────────────────────
+// Security Middleware
+// ──────────────────────────────────────────────
 
 // Helmet: Set secure HTTP headers
 app.use(helmet({
@@ -64,22 +73,8 @@ const uploadLimiter = rateLimit({
     success: false,
     message: 'Too many uploads. Please wait a moment before uploading again.',
   },
-  skip: (req) => {
-    // Skip limiting for non-upload requests
-    return req.method !== 'POST' || !req.path.includes('/files/upload');
-  },
 });
 app.use('/api/files/upload', uploadLimiter);
-
-// ──────────────────────────────────────────────
-// General Middleware
-// ──────────────────────────────────────────────
-
-// CORS: Allow frontend to communicate with backend
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true, // Required for httpOnly cookies
-}));
 
 // Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));

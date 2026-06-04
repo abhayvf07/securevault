@@ -35,7 +35,7 @@ const DashboardPage = () => {
     try {
       const res = await foldersAPI.getAll();
       setFolders(res.data.data.folders);
-    } catch (err) {
+    } catch {
       toast.error('Failed to load folders');
     } finally {
       setLoadingFolders(false);
@@ -54,7 +54,7 @@ const DashboardPage = () => {
       const res = await filesAPI.getAll(params);
       setFiles(res.data.data.files);
       setPagination(res.data.data.pagination || {});
-    } catch (err) {
+    } catch {
       toast.error('Failed to load files');
     } finally {
       setLoadingFiles(false);
@@ -73,7 +73,7 @@ const DashboardPage = () => {
     }, searchQuery ? 300 : 0);
 
     return () => clearTimeout(timer);
-  }, [fetchFiles]);
+  }, [fetchFiles, searchQuery]);
 
   // Reset page when filters change
   useEffect(() => {

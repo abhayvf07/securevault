@@ -23,12 +23,13 @@ const AnalyticsPanel = () => {
       try {
         const res = await activityAPI.getAnalytics();
         setAnalytics(res.data.data);
-      } catch (err) {
-        console.error('Failed to load analytics');
+      } catch (error) {
+        console.error('Failed to load analytics', error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchAnalytics();
   }, []);
 
@@ -48,16 +49,6 @@ const AnalyticsPanel = () => {
       case 'PDFs': return <FileText className="w-4 h-4 text-red-400" />;
       case 'Documents': return <FileText className="w-4 h-4 text-blue-400" />;
       default: return <File className="w-4 h-4 text-dark-400" />;
-    }
-  };
-
-  // Get category color
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case 'Images': return 'bg-emerald-500';
-      case 'PDFs': return 'bg-red-500';
-      case 'Documents': return 'bg-blue-500';
-      default: return 'bg-dark-500';
     }
   };
 
@@ -125,7 +116,7 @@ const AnalyticsPanel = () => {
         {/* Storage bar */}
         <div className="w-full h-2 bg-dark-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-700"
+            className="h-full bg-linear-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-700"
             style={{ width: `${Math.max(2, storagePercent)}%` }}
           />
         </div>

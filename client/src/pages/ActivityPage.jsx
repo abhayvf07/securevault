@@ -39,7 +39,7 @@ const ActivityPage = () => {
       const res = await activityAPI.getLogs(params);
       setLogs(res.data.data.logs);
       setPagination(res.data.data.pagination);
-    } catch (err) {
+    } catch {
       console.error('Failed to load activity');
     } finally {
       setLoading(false);
@@ -87,7 +87,7 @@ const ActivityPage = () => {
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary-500 to-purple-600 flex items-center justify-center">
             <Activity className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -148,7 +148,7 @@ const ActivityPage = () => {
                     style={{ animationDelay: `${idx * 30}ms` }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-9 h-9 rounded-lg ${config.bg} flex items-center justify-center shrink-0`}>
                         <config.Icon className={`w-4 h-4 ${config.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -164,7 +164,7 @@ const ActivityPage = () => {
                           </p>
                         )}
                       </div>
-                      <span className="text-xs text-dark-500 whitespace-nowrap flex-shrink-0">
+                      <span className="text-xs text-dark-500 whitespace-nowrap shrink-0">
                         {formatTime(log.createdAt)}
                       </span>
                     </div>

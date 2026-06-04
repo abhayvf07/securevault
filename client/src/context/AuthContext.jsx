@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI, setApiToken } from '../services/api';
+import { createContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
+import { authAPI, setApiToken, setTokenUpdater } from '../services/api';
 
 /**
  * Auth Context
@@ -15,14 +16,6 @@ import { authAPI, setApiToken } from '../services/api';
 
 const AuthContext = createContext(null);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null); // Stored in memory only, never in localStorage
@@ -33,11 +26,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        // Try to get current user — if successful, we have a valid refresh token
-        const res = await authAPI.getMe();
-        setUser(res.data.data.user);
-        // Token is now in memory via interceptor response
-      } catch (err) {
+        // Refresh the access token first using the httpOnly refresh cookie.
+        const refreshRes = await authAPI.refresh();
+        const refreshToken = refreshRes.data.data.token;
+
+        // Update the in-memory token store and React state before fetching user profile.
+        setToken(refreshToken);
+        setApiToken(refreshToken);
+
+        const meRes = await authAPI.getMe();
+        setUser(meRes.data.data.user);
+      } catch {
         // No valid session — user needs to login
         setUser(null);
         setToken(null);
@@ -48,6 +47,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     verifySession();
+  }, []);
+
+  useEffect(() => {
+    setTokenUpdater(setToken);
+    return () => setTokenUpdater(null);
   }, []);
 
   // Auto-logout: listen for custom logout event (from other tabs or interceptor)
@@ -93,8 +97,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authAPI.logout(); // Clear refresh token on server + cookie
-    } catch (err) {
-      // Best effort — even if API call fails, clear local state
+    } catch {
+      toast.error('Logout failed. Clearing local session.');
     }
     setUser(null);
     setToken(null);

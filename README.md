@@ -1,124 +1,135 @@
-# 🚀 SecureVault — File Storage & Sharing Platform
+# SecureVault — File Storage & Sharing Platform
 
-🔐 A full-stack secure file storage system inspired by Google Drive, built using the MERN stack.
-It allows users to upload, manage, and share files securely with authentication, activity tracking, and scalable backend architecture.
-
----
-
-## 📸 Preview
-
-### 🏠 Dashboard
-
-Overview of files, folders, and user activity.
-<img width="1920" height="923" alt="Dashborad" src="Screenshots/Dashboard.png" />
+A full-stack file storage and sharing app I built using the MERN stack, inspired by Google Drive. Users can upload, manage and share files securely. I focused a lot on getting the auth, file handling and backend structure right — not just making something that runs, but something that's actually built properly.
 
 ---
 
-### 🔗 File Sharing
+## Preview
 
-Share files using secure links with optional protection.
+### Dashboard
+Overview of your files, folders and recent activity.
+<img width="1920" height="923" alt="Dashboard" src="Screenshots/Dashboard.png" />
+
+---
+
+### File Sharing
+Share files using unique secure links — with optional password and expiry.
 <img width="1920" height="923" alt="Share" src="Screenshots/Share.png" />
 
 ---
 
-### 📊 Activity Tracking
-
-Track user actions like uploads, deletes, and shares.
-<img width="1920" height="923" alt="Home Page" src="Screenshots/Activity.png" />
-
----
-
-## 🎯 Why This Project Matters
-
-This project demonstrates:
-
-* Secure authentication system (JWT-based)
-* Scalable backend design (modular architecture)
-* File handling & storage logic
-* Real-world features like sharing, tracking, and validation
-* Clean frontend integration with API
-* Refresh token rotation and secure cookie handling
-
-💡 Built with focus on **backend engineering, security, and scalability**
+### Activity Tracking
+See everything that happened — uploads, deletes, shares, logins.
+<img width="1920" height="923" alt="Activity" src="Screenshots/Activity.png" />
 
 ---
 
-## 📌 Features
+## Why I Built This
 
-### 🔐 Authentication & Security
+I wanted to build something that actually feels like a real-world project. Most beginner projects are just basic CRUD apps and I wanted to go beyond that. File storage seemed like a great challenge because there's so much to think about — how do you handle auth properly? How do you make sharing safe? How do you structure the backend so it doesn't become a nightmare to maintain?
 
-* JWT-based authentication
-* Protected API routes
-* Environment variable protection
-* Input validation (Zod)
-
-### 📁 File Management
-
-* Upload files with validation
-* Folder-based organization
-* Download & delete files
-* File metadata handling
-
-### 🔗 File Sharing
-
-* Share files via unique links
-* Password-protected access
-* Expiry-based links
-* Download tracking
-
-### 📊 Activity Tracking
-
-* Logs user actions (upload, delete, share, login)
-* Backend logging system
-
-### ⚡ Performance & Scalability
-
-* Pagination support
-* Optimized database queries
-* Modular backend architecture
+Building this taught me a lot about JWT refresh token rotation, secure cookie handling, file validation, modular backend design and more. I'm genuinely proud of how this turned out.
 
 ---
 
-## 🏗 Tech Stack
+## Features
 
-### Frontend
+### Authentication & Security
+- JWT-based auth with access + refresh tokens
+- Protected API routes
+- Input validation using Zod
+- Environment variable protection
 
-* React 19 + Vite
-* Tailwind CSS
-* Axios
-* React Router DOM
+### File Management
+- Upload files with proper validation
+- Organize into folders
+- Download and delete files
+- File metadata handling
 
-### Backend
+### File Sharing
+- Share files via unique generated links
+- Optional password protection on links
+- Set expiry on share links
+- Tracks how many times a file was downloaded
+- When using Cloudinary, downloads stream securely from the cloud
 
-* Node.js
-* Express.js
-* MongoDB / Mongoose
-* JWT access + refresh token auth
-* bcryptjs
-* Multer
-* Zod
-* Cloudinary (optional)
-* Helmet
-* express-rate-limit
-* cookie-parser
+### Activity Tracking
+- Logs every user action — upload, delete, share, login
+- Backend logging system
 
-### Additional Libraries
-
-* uuid
-* cors
-* dotenv
+### Performance & Scalability
+- Pagination on file listings
+- Optimized database queries
+- Modular backend so adding new features doesn't break existing ones
 
 ---
 
-## 📂 Project Structure
+## Tech Stack
 
-```id="struct01"
+**Frontend**
+- React 19 + Vite
+- Tailwind CSS
+- Axios
+- React Router DOM
+
+**Backend**
+- Node.js + Express.js
+- MongoDB + Mongoose
+- JWT (access + refresh token auth)
+- bcryptjs
+- Multer
+- Zod
+- Cloudinary (optional)
+- Helmet
+- express-rate-limit
+- cookie-parser
+- uuid, cors, dotenv
+
+---
+
+## How I Structured It
+
+The backend is service-oriented — routes handle HTTP, controllers handle request/response, and services have the actual business logic. Storage is abstracted into its own layer which means switching between local and Cloudinary is just an env variable change, no code change needed.
+
+**Storage options:**
+- **Local** — files go to the `uploads/` folder on the server, good for dev and cheap hosting
+- **Cloudinary** — just add credentials in `.env` and it switches automatically
+
+The frontend also has a clean structure — pages, reusable components, hooks/context and API clients are all kept separate.
+
+### API Endpoints
+
+| Method | Route | What it does |
+|--------|-------|--------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/refresh` | Refresh access token |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Get logged in user |
+| POST | `/api/files/upload` | Upload a file |
+| GET | `/api/files` | List all files |
+| DELETE | `/api/files/:id` | Delete a file |
+| PUT | `/api/files/:id/rename` | Rename a file |
+| GET | `/api/files/download/:id` | Download a file |
+| POST | `/api/share/:fileId` | Create a share link |
+| GET | `/api/share/:token/info` | Get share link info |
+| POST | `/api/share/:token/download` | Download via share link |
+| GET | `/api/activity` | Get activity log |
+| GET | `/api/activity/analytics` | Get analytics |
+
+I'll add a proper Postman collection soon — it's on my to-do list.
+
+---
+
+## Project Structure
+
+```
 SecureVault/
 │
 ├── client/                # Frontend (React + Vite)
 │   ├── src/
 │   ├── public/
-│   └── dist/ (ignored)
+│   └── dist/              (ignored)
 │
 ├── server/                # Backend (Node + Express)
 │   ├── controllers/
@@ -126,7 +137,7 @@ SecureVault/
 │   ├── middleware/
 │   ├── services/
 │   ├── utils/
-│   ├── uploads/ (ignored)
+│   ├── uploads/           (ignored)
 │   └── __tests__/
 │
 └── README.md
@@ -134,27 +145,25 @@ SecureVault/
 
 ---
 
-## ⚙️ Installation & Setup
+## Getting Started
 
-### 1️⃣ Clone the repository
+### 1. Clone the repo
 
-```bash id="clone01"
-git clone https://github.com/your-abhayvf07/securevault.git
+```bash
+git clone https://github.com/abhayvf07/securevault.git
 cd securevault
 ```
 
----
+### 2. Setup the backend
 
-### 2️⃣ Setup Backend
-
-```bash id="backend01"
+```bash
 cd server
 npm install
 ```
 
-Create `.env` file (copy from `.env.example` and fill in your values):
+Create a `.env` file (you can copy `.env.example` and fill in the values):
 
-```id="env01"
+```env
 PORT=5000
 NODE_ENV=development
 MONGO_URI=mongodb+srv://your_user:your_password@cluster.mongodb.net/securevault
@@ -164,132 +173,134 @@ JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 MAX_FILE_SIZE=5242880
 CLIENT_URL=http://localhost:5173
+
+# leave blank if you want to use local storage
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ```
 
-To generate secure random JWT secrets:
+You can generate secure JWT secrets like this:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Run backend:
-
-```bash id="backend02"
+Start the backend:
+```bash
 npm run dev
 ```
 
-The backend will be available at `http://localhost:5000`
+It'll run on `http://localhost:5000`. If that port is busy it'll automatically try the next one.
 
 ---
 
-### 3️⃣ Setup Frontend
+### 3. Setup the frontend
 
-```bash id="frontend01"
+```bash
 cd client
 npm install
 ```
 
-Create `.env` file (optional — defaults to `http://localhost:5000/api`):
-
-```id="env02"
+Optionally create a `.env` file (defaults to `http://localhost:5000/api` if you skip this):
+```env
 VITE_API_URL=http://localhost:5000/api
 ```
-
-Run frontend:
 
 ```bash
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:5173`
+Frontend runs on `http://localhost:5173`.
 
 ---
 
-### 4️⃣ Running Tests (Optional)
+### 4. Running Tests (optional)
 
-```bash id="tests01"
+```bash
 cd server
 npm test
 ```
 
-This runs Jest tests for authentication endpoints.
+This runs the Jest tests I wrote for the auth endpoints.
 
 ---
 
-## 🚀 Deployment
+## Security — what I implemented and why
 
-* **Frontend**: Vercel / Netlify (run `npm run build` to create optimized build)
-* **Backend**: Render / Railway (ensure all environment variables are set in production)
+This was honestly the most fun part to work on. Security is usually treated as an afterthought in student projects so I made it a priority here.
 
-### Important: Production Setup
-Before deploying to production:
-1. Generate new JWT secrets (never reuse development secrets)
+**Auth & Authorization**
+- Access token lives in memory only — not localStorage, so XSS can't steal it
+- Refresh token stored in httpOnly cookie — JavaScript can't access it at all
+- Token rotation on every refresh, old tokens are invalidated
+- Every file operation checks ownership — can't access someone else's file by guessing an ID (IDOR protection)
+- Invalid or expired tokens automatically log the user out
+
+**File Security**
+- Magic byte validation — I check the actual file content, not just the extension (so you can't rename a `.exe` to `.jpg` and sneak it through)
+- Dangerous extensions are blocked — `.exe`, `.bat`, `.sh`, `.dll` etc.
+- Files get a UUID name on disk — original filename never touches storage
+- Path traversal protection — uploads can't escape their directory
+- File size limit — 5MB by default, configurable in env
+
+**API Security**
+- Rate limiting — 100 req/15min general, 5 req/15min on auth routes, 10 req/min on uploads
+- Zod validates all user input before it reaches business logic
+- Helmet sets security headers automatically
+- CORS is locked to the configured `CLIENT_URL` only
+
+**Passwords**
+- Strong password policy enforced at signup
+- Share link passwords are bcrypt hashed with 12 salt rounds — never stored as plain text
+
+---
+
+## Deployment
+
+**Frontend** → Vercel or Netlify. Just run `npm run build` and deploy the `dist/` folder.
+
+**Backend** → Render or Railway. Set all env variables in the dashboard before deploying.
+
+Things to do before going to production:
+1. Generate new JWT secrets — never reuse dev ones in production
 2. Set `NODE_ENV=production`
-3. Configure MongoDB for production replica set (for transactions)
-4. Enable HTTPS and set `secure: true` for cookies
-5. Update `CLIENT_URL` to your production frontend URL
+3. Set up MongoDB with a replica set (needed for transactions)
+4. Enable HTTPS and set `secure: true` on cookies
+5. Update `CLIENT_URL` to your real frontend URL
 6. Set up proper logging and monitoring
 
 ---
 
-## 🔒 Security Features
+## What I Want to Add Next
 
-### Authentication & Authorization
-* **JWT Access Token** (15 min) + **Refresh Token** (7 days) rotation
-* **httpOnly Cookies** for secure refresh token storage (prevents XSS)
-* **Access token in memory only** (not in localStorage) for XSS protection
-* **Ownership verification** on all file operations (prevents IDOR)
-
-### File Security
-* **Path traversal protection** — uploaded files cannot access parent directories
-* **Magic byte validation** — actual file content is verified, not just MIME type
-* **Dangerous extension blocklist** — .exe, .bat, .sh, .dll, etc. rejected
-* **UUID filename generation** — prevents filename-based attacks
-* **File size limits** — configurable max file size (default 5MB)
-
-### API Security
-* **Rate limiting** — 100 req/15min general, 5 req/15min auth, 10 req/1min uploads
-* **Zod schema validation** — all user inputs validated server-side
-* **Helmet security headers** — prevents common web vulnerabilities
-* **CORS configured** — frontend can only communicate from trusted origin
-* **bcryptjs hashing** — passwords hashed with 12 salt rounds
-
-### Password Security
-* **Strong password policy** enforced at registration (uppercase, lowercase, numbers, special chars)
-* **Shared link passwords** hashed with bcryptjs (not stored in plain text)
-* **Session-based auth** — invalid tokens automatically logged out
+- Actually deploy the whole thing (frontend + backend)
+- Add AWS S3 as another storage option
+- Write more tests — currently only auth is covered, want to cover files, sharing and activity too
+- File move between folders
+- Real-time notifications for shared files
+- Postman collection / Swagger docs
 
 ---
 
-## 📊 Future Improvements
+## Testing
 
-* Deploy frontend and backend to production
-* Add AWS S3 support alongside Cloudinary
-* Expand test coverage across backend APIs
-* Implement file move between folders
-* Add user collaboration and real-time sharing updates
+I wrote a basic Jest test suite for auth endpoints to start. The structure is clean so extending it to other routes is easy.
 
----
-
-## 🧪 Testing
-
-* Basic API test structure included
-* Easily extendable for full test coverage
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to fork and submit a pull request.
+```bash
+cd server
+npm test
+```
 
 ---
 
-## 📧 Contact
+## Contributing
 
-GitHub: https://github.com/abhayvf07
+Feel free to fork and open a PR if you want to add something or fix a bug. If it's a bigger change, open an issue first so we can talk about it.
 
 ---
 
-## ⭐ Support
+## Contact
 
-If you like this project, give it a ⭐ on GitHub!
+GitHub: [https://github.com/abhayvf07](https://github.com/abhayvf07)
+
+If you liked this project, a star on GitHub would mean a lot to me — it keeps me motivated to keep building!

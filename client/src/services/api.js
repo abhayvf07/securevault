@@ -15,9 +15,19 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 // Token store — managed by AuthContext
 let currentToken = null;
+let tokenUpdater = null;
 
 export const setApiToken = (token) => {
+  const previousToken = currentToken;
   currentToken = token;
+
+  if (tokenUpdater && token !== previousToken) {
+    tokenUpdater(token);
+  }
+};
+
+export const setTokenUpdater = (updater) => {
+  tokenUpdater = updater;
 };
 
 export const getApiToken = () => currentToken;
@@ -136,9 +146,10 @@ export const authAPI = {
 // ──────────────────────────────────────────────
 
 export const filesAPI = {
-  upload: (formData) =>
+  upload: (formData, config = {}) =>
     api.post('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      ...config,
     }),
 
   getAll: (params = {}) => api.get('/files', { params }),
