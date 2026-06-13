@@ -6,18 +6,22 @@ const logger = require('../utils/logger');
  * @param {Object} params - Activity parameters
  */
 exports.logUserActivity = async ({ userId, action, resourceType, resourceId, resourceName, ipAddress, details }) => {
-  await ActivityLog.create({
-    userId,
-    action,
-    resourceType,
-    resourceId,
-    resourceName,
-    ipAddress,
-    ...(details && { details })
-  });
+  try {
+    await ActivityLog.create({
+      userId,
+      action,
+      resourceType,
+      resourceId,
+      resourceName,
+      ipAddress,
+      ...(details && { details })
+    });
 
-  // Specifically for files, we also use the structured logger activity method
-  if (resourceType === 'file') {
-    logger.activity(userId, action, resourceName, details);
+    // Specifically for files, we also use the structured logger activity method
+    if (resourceType === 'file') {
+      logger.activity(userId, action, resourceName, details);
+    }
+  } catch (err) {
+    logger.error(`Activity logging failed: ${err.message}`);
   }
 };
