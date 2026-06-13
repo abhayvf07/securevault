@@ -29,15 +29,14 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'text/plain',
   'text/csv',
-  'application/json',
   'application/zip',
   'application/x-rar-compressed',
 ];
 
-// Blocked file extensions (security: prevent executable uploads)
+// Blocked file extensions (security: prevent executable uploads and script injections)
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.sh', '.msi', '.com', '.scr',
-  '.pif', '.vbs', '.js', '.wsf', '.ps1', '.dll',
+  '.pif', '.vbs', '.js', '.json', '.wsf', '.ps1', '.dll',
 ];
 
 // Configure disk storage
@@ -112,10 +111,19 @@ const validateFileMagicBytes = async (filePath, declaredMimeType) => {
       actualType: fileType.mime,
     };
   } catch (err) {
-    // If magic byte check fails, reject the file
+    // Distinguish between module loading errors (ESM/CJS conflicts) and generic read errors
+    if (err.code === 'ERR_MODULE_NOT_FOUND' || err.message.includes('import')) {
+      return {
+        valid: false,
+        reason: 'Server configuration error: Could not load the file verification module. Please contact an administrator.',
+        actualType: null,
+      };
+    }
+
+    // Generic fallback for file reading errors
     return {
       valid: false,
-      reason: `Could not verify file type: ${err.message}`,
+      reason: `Could not verify file content: ${err.message}`,
       actualType: null,
     };
   }
