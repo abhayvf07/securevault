@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /**
  * File Model
@@ -9,7 +9,7 @@ const fileSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
       index: true,
     },
@@ -36,25 +36,29 @@ const fileSchema = new mongoose.Schema(
     },
     folderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Folder',
+      ref: "Folder",
       default: null, // null = root level (no folder)
     },
     storageType: {
       type: String,
-      enum: ['local', 'cloudinary'],
-      default: 'local',
+      enum: ["local", "cloudinary"],
+      default: "local",
     },
     publicId: {
       type: String,
       default: null,
     },
+    isDownloading: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Compound index for efficient queries: get user's files, optionally filtered by folder
 fileSchema.index({ userId: 1, folderId: 1 });
 
-module.exports = mongoose.model('File', fileSchema);
+module.exports = mongoose.model("File", fileSchema);
