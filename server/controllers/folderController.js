@@ -49,19 +49,22 @@ const createFolder = asyncHandler(async (req, res) => {
 // @route   GET /api/folders
 // @access  Private
 const getFolders = asyncHandler(async (req, res) => {
-  const folders = await Folder.find({ userId: req.user._id })
-    .sort({ createdAt: -1 });
-
-  // Get file count per folder
-  const foldersWithCount = await Promise.all(
-    folders.map(async (folder) => {
-      const fileCount = await File.countDocuments({ folderId: folder._id });
-      return {
-        ...folder.toObject(),
-        fileCount,
-      };
-    })
-  );
+  const foldersWithCount = await Folder.aggregate([
+    { $match: { userId: req.user._id } },
+    {
+      $lookup: {
+        from: 'files',
+        localField: '_id',
+        foreignField: 'folderId',
+        as: 'files',
+      },
+    },
+    {
+      $addFields: { fileCount: { $size: '$files' } },
+    },
+    { $project: { files: 0 } },
+    { $sort: { createdAt: -1 } },
+  ]);
 
   res.status(200).json({
     success: true,
