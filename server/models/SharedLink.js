@@ -86,6 +86,7 @@ sharedLinkSchema.methods.comparePassword = async function (candidatePassword) {
 
 /**
  * Check if the shared link is still valid.
+ * Note: For concurrent downloads, use the static increment method below to avoid race conditions.
  * @returns {object} { valid: boolean, reason?: string }
  */
 sharedLinkSchema.methods.isValid = function () {
@@ -100,6 +101,33 @@ sharedLinkSchema.methods.isValid = function () {
   }
 
   return { valid: true };
+};
+
+/**
+ * Static method: Atomically check validity and increment download count.
+ * Prevents race conditions when multiple users download at the same exact time.
+ * @param {mongoose.Types.ObjectId | string} linkId - The ID of the shared link
+ * @returns {Promise<object|null>} The updated link document, or null if expired/limit reached
+ */
+sharedLinkSchema.statics.incrementDownloadIfValid = async function (linkId) {
+  // 'this' refers to the SharedLink model in static methods
+  return await this.findOneAndUpdate(
+    {
+      _id: linkId,
+      // Condition 1: No limit OR current count is less than the limit
+      $or: [
+        { downloadLimit: null },
+        { $expr: { $lt: ['$downloadCount', '$downloadLimit'] } }
+      ],
+      // Condition 2: No expiry OR expiry is in the future
+      $or: [
+        { expiryDate: null },
+        { expiryDate: { $gt: new Date() } }
+      ]
+    },
+    { $inc: { downloadCount: 1 } },
+    { new: true }
+  );
 };
 
 module.exports = mongoose.model('SharedLink', sharedLinkSchema);

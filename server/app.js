@@ -14,112 +14,78 @@ const activityRoutes = require('./routes/activityRoutes');
 
 const app = express();
 
-// ──────────────────────────────────────────────
-// CORS — Must be FIRST so preflight OPTIONS requests get proper headers
-// ──────────────────────────────────────────────
-
-// Trust proxy (needed for accurate IP behind Render/Railway/Vercel)
+// Trust reverse proxies (like Render, Vercel) so we get the real user IPs
 app.set('trust proxy', 1);
 
-// CORS: Allow frontend to communicate with backend
+// Let the frontend talk to us and send secure cookies
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true, // Required for httpOnly cookies
+  credentials: true, 
 }));
 
-// ──────────────────────────────────────────────
-// Security Middleware
-// ──────────────────────────────────────────────
-
-// Helmet: Set secure HTTP headers
+// Add basic security headers
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow cross-origin file access
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// General API rate limit: 100 requests per 15 minutes per IP
+// General API spam protection (100 requests per 15 mins)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip, // Track by user ID if available
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many requests. Please try again later.',
-  },
+  message: { success: false, message: 'Too many requests. Please try again later.' },
 });
 app.use('/api/', apiLimiter);
 
-// Strict auth rate limit: 5 attempts per 15 minutes (prevents brute force)
+// Strict limit for logins and signups to stop brute-force hacking
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
+  // ✅ FIX: Track limits by user ID if logged in, otherwise fall back to IP
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many login attempts. Please try again after 15 minutes.',
-  },
+  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' },
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// Upload rate limit: 10 uploads per minute per user IP (prevents disk/storage abuse)
+// Stop users from spamming file uploads and eating up our server disk
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10,
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip, // Track by user ID if available
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many uploads. Please wait a moment before uploading again.',
-  },
+  message: { success: false, message: 'Too many uploads. Please wait a moment before uploading again.' },
 });
 app.use('/api/files/upload', uploadLimiter);
 
-// Parse JSON bodies
-app.use(express.json({ limit: '10mb' }));
-
-// Parse URL-encoded bodies
+// Parse incoming data
+app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Read secure cookies
 
-// Parse cookies (required for refresh token)
-app.use(cookieParser());
-
-// Uploaded files should only be accessed through authenticated download endpoints.
-// The /api/files/download/:id route enforces ownership and storage checks.
-
-// ──────────────────────────────────────────────
-// API Routes
-// ──────────────────────────────────────────────
-
+// Hook up all our routes
 app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/activity', activityRoutes);
 
-// Health check endpoint
+// Quick check to see if the server is alive
 app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'SecureVault API is running',
-    timestamp: new Date().toISOString(),
-  });
+  res.status(200).json({ success: true, message: 'SecureVault API is running' });
 });
 
-// ──────────────────────────────────────────────
-// Error Handling
-// ──────────────────────────────────────────────
-
-// 404 handler for unknown routes
+// Handle unknown URLs smoothly
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`,
-  });
+  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 
-// Centralized error handler (must be last)
+// Catch all server errors so the app doesn't crash
 app.use(errorHandler);
 
 module.exports = app;
