@@ -151,6 +151,11 @@ const deleteFile = asyncHandler(async (req, res) => {
     throw new AppError('Not authorized to delete this file', 403);
   }
 
+  // ✅ FIX: Prevent deletion if file is currently streaming
+  if (file.isDownloading) {
+    throw new AppError('File is currently being downloaded and cannot be deleted. Please try again later.', 409); // 409 Conflict
+  }
+
   // Delete file from storage (local or cloud)
   await uploadService.deleteFile(file.filePath, file.storageType || 'local', file.publicId);
 
@@ -239,6 +244,24 @@ const downloadFile = asyncHandler(async (req, res) => {
     ipAddress: req.ip,
   });
 
+  // ✅ FIX: Mark file as downloading to lock it from deletion
+  await File.findByIdAndUpdate(file._id, { isDownloading: true });
+
+  // Cleanup helper to unlock the file when the stream finishes or the client aborts
+  let flagReset = false;
+  const unlockFile = async () => {
+    if (!flagReset) {
+      flagReset = true;
+      await File.findByIdAndUpdate(file._id, { isDownloading: false }).catch(err => 
+        console.error('Failed to reset download flag:', err)
+      );
+    }
+  };
+
+  // Attach cleanup to response lifecycle events
+  res.on('finish', unlockFile);
+  res.on('close', unlockFile);
+
   if (file.storageType === 'cloudinary' && file.filePath?.startsWith('http')) {
     await streamRemoteFile(file.filePath, res, file.originalName);
     return;
@@ -252,9 +275,9 @@ const downloadFile = asyncHandler(async (req, res) => {
     throw new AppError('Invalid file path', 403);
   }
 
-  // Verify file exists on disk
+  // ✅ FIX: Information Leakage — generic error message matching the DB check
   if (!fs.existsSync(filePath)) {
-    throw new AppError('File not found on server', 404);
+    throw new AppError('File not found', 404);
   }
 
   // Stream file download with original name
