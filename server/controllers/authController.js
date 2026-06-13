@@ -42,6 +42,11 @@ const issueRefreshToken = async (userId, res) => {
 const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
+  // ✅ FIX: Explicit type check for defense-in-depth consistency
+  if (typeof email !== 'string') {
+    throw new AppError('Invalid email format', 400);
+  }
+
   // Check if user already exists
   const existingUser = await User.findOne({ email: email.toLowerCase() });
   if (existingUser) {
@@ -144,21 +149,18 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new AppError('No refresh token provided', 401);
   }
 
-  // Find the refresh token in DB
-  const storedToken = await RefreshToken.findOne({ token: refreshToken });
+  // ✅ FIX: Atomically find and delete the token in one step. 
+  // This solves the TTL race condition and enforces token rotation cleanly.
+  const storedToken = await RefreshToken.findOneAndDelete({ token: refreshToken });
 
   if (!storedToken) {
     throw new AppError('Invalid refresh token', 401);
   }
 
-  // Check if expired (belt-and-suspenders — TTL index handles cleanup)
+  // Check if expired (in case MongoDB's TTL background job hasn't run yet)
   if (storedToken.expiresAt < new Date()) {
-    await RefreshToken.findByIdAndDelete(storedToken._id);
     throw new AppError('Refresh token expired', 401);
   }
-
-  // Token rotation: delete old token, issue new pair
-  await RefreshToken.findByIdAndDelete(storedToken._id);
 
   // Issue new tokens
   const newAccessToken = generateAccessToken(storedToken.userId);
