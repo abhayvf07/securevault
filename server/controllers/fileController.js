@@ -269,7 +269,7 @@ const downloadFile = asyncHandler(async (req, res) => {
 
   // Security: Verify local file path is within uploads directory (path traversal protection)
   const uploadsDir = path.resolve(__dirname, '..', 'uploads');
-  const filePath = path.resolve(file.filePath);
+  const filePath = path.resolve(__dirname, '..', file.filePath);
   
   if (!filePath.startsWith(uploadsDir + path.sep)) {
     throw new AppError('Invalid file path', 403);
