@@ -4,7 +4,7 @@ import FolderList from '../components/FolderList';
 import UploadZone from '../components/UploadZone';
 import FileCard from '../components/FileCard';
 import AnalyticsPanel from '../components/AnalyticsPanel';
-import { filesAPI, foldersAPI } from '../services/api';
+import api, { filesAPI, foldersAPI } from '../services/api';
 import { FileX, Loader2, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { FileListSkeleton } from '../components/SkeletonLoader';
 import toast from 'react-hot-toast';
@@ -28,6 +28,21 @@ const DashboardPage = () => {
   const [loadingFolders, setLoadingFolders] = useState(true);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [maxFileSize, setMaxFileSize] = useState(null);
+  const [analyticsKey, setAnalyticsKey] = useState(0);
+
+  // Fetch server config (max file size) from health endpoint
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await api.get('/health');
+        setMaxFileSize(res.data.data?.maxFileSize);
+      } catch {
+        // Silently fall back to client default
+      }
+    };
+    fetchConfig();
+  }, []);
 
   // Fetch folders
   const fetchFolders = useCallback(async () => {
@@ -60,6 +75,12 @@ const DashboardPage = () => {
       setLoadingFiles(false);
     }
   }, [selectedFolder, searchQuery, typeFilter, page]);
+
+  // Helper: refetch files AND bump analytics after any file mutation
+  const handleFileMutation = useCallback(() => {
+    fetchFiles();
+    setAnalyticsKey((k) => k + 1);
+  }, [fetchFiles]);
 
   // Initial load
   useEffect(() => {
@@ -101,12 +122,13 @@ const DashboardPage = () => {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6">
           {/* Analytics Panel */}
-          <AnalyticsPanel />
+          <AnalyticsPanel refreshKey={analyticsKey} />
 
           {/* Upload Zone */}
           <UploadZone
             folderId={selectedFolder}
-            onUploadComplete={fetchFiles}
+            onUploadComplete={handleFileMutation}
+            maxFileSize={maxFileSize}
           />
 
           {/* Toolbar */}
@@ -174,7 +196,7 @@ const DashboardPage = () => {
                   <FileCard
                     key={file._id}
                     file={file}
-                    onFileChange={fetchFiles}
+                    onFileChange={handleFileMutation}
                   />
                 ))}
               </div>
