@@ -121,7 +121,7 @@ const LoginPage = () => {
                   placeholder="••••••••"
                   className="input-field pr-10"
                   required
-                  minLength={6}
+                  minLength={8}
                   id="password-input"
                 />
                 <button
@@ -132,6 +132,24 @@ const LoginPage = () => {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+
+              {/* Password requirements checklist (signup only) */}
+              {!isLogin && form.password.length > 0 && (
+                <div className="mt-2 space-y-1 animate-slide-down">
+                  {[
+                    { test: form.password.length >= 8, label: '8+ characters' },
+                    { test: /[A-Z]/.test(form.password), label: 'Uppercase letter' },
+                    { test: /[a-z]/.test(form.password), label: 'Lowercase letter' },
+                    { test: /[0-9]/.test(form.password), label: 'Number' },
+                    { test: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(form.password), label: 'Special character' },
+                  ].map(({ test, label }) => (
+                    <p key={label} className={`text-xs flex items-center gap-1.5 transition-colors duration-200 ${test ? 'text-emerald-400' : 'text-dark-500'}`}>
+                      <span>{test ? '✓' : '✗'}</span>
+                      {label}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button
