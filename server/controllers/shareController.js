@@ -114,11 +114,7 @@ const accessSharedFile = asyncHandler(async (req, res) => {
     throw new AppError('The file associated with this link no longer exists', 404);
   }
 
-  const validity = sharedLink.isValid();
-  if (!validity.valid) {
-    throw new AppError(validity.reason, 410);
-  }
-
+  // Password check first (before consuming a download count)
   if (sharedLink.password) {
     const password = req.body?.password;
 
@@ -132,11 +128,14 @@ const accessSharedFile = asyncHandler(async (req, res) => {
     }
   }
 
-  const file = sharedLink.fileId;
+  // Atomically check validity (expiry + download limit) and increment download count
+  // This prevents race conditions where two concurrent downloads both pass the limit check
+  const updatedLink = await SharedLink.incrementDownloadIfValid(sharedLink._id);
+  if (!updatedLink) {
+    throw new AppError('Link has expired or download limit reached', 410);
+  }
 
-  await SharedLink.findByIdAndUpdate(sharedLink._id, {
-    $inc: { downloadCount: 1 },
-  });
+  const file = sharedLink.fileId;
 
   logger.activity('anonymous', 'DOWNLOAD', file.originalName, {
     via: 'shared-link',
@@ -149,7 +148,7 @@ const accessSharedFile = asyncHandler(async (req, res) => {
   }
 
   const uploadsDir = path.resolve(__dirname, '..', 'uploads');
-  const filePath = path.resolve(file.filePath);
+  const filePath = path.resolve(__dirname, '..', file.filePath);
 
   if (!filePath.startsWith(uploadsDir + path.sep)) {
     throw new AppError('Invalid file path', 403);
