@@ -113,10 +113,13 @@ const FolderList = ({
           </div>
         ) : (
           folders.map((folder) => (
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               key={folder._id}
               onClick={() => onSelectFolder(folder._id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectFolder(folder._id); } }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group cursor-pointer
                 ${selectedFolder === folder._id
                   ? 'bg-primary-500/15 text-primary-400 border border-primary-500/20'
                   : 'text-dark-300 hover:bg-dark-800 hover:text-dark-200'
@@ -132,7 +135,7 @@ const FolderList = ({
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
-            </button>
+            </div>
           ))
         )}
 
