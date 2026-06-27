@@ -114,16 +114,22 @@ sharedLinkSchema.statics.incrementDownloadIfValid = async function (linkId) {
   return await this.findOneAndUpdate(
     {
       _id: linkId,
-      // Condition 1: No limit OR current count is less than the limit
-      $or: [
-        { downloadLimit: null },
-        { $expr: { $lt: ['$downloadCount', '$downloadLimit'] } }
+      $and: [
+        // Condition 1: No limit OR current count is less than the limit
+        {
+          $or: [
+            { downloadLimit: null },
+            { $expr: { $lt: ['$downloadCount', '$downloadLimit'] } },
+          ],
+        },
+        // Condition 2: No expiry OR expiry is in the future
+        {
+          $or: [
+            { expiryDate: null },
+            { expiryDate: { $gt: new Date() } },
+          ],
+        },
       ],
-      // Condition 2: No expiry OR expiry is in the future
-      $or: [
-        { expiryDate: null },
-        { expiryDate: { $gt: new Date() } }
-      ]
     },
     { $inc: { downloadCount: 1 } },
     { new: true }
