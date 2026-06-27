@@ -32,7 +32,7 @@ app.use(helmet({
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  keyGenerator: (req) => req.user?._id?.toString() || req.ip, // Track by user ID if available
+  keyGenerator: (req) => req.ip,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests. Please try again later.' },
@@ -43,8 +43,7 @@ app.use('/api/', apiLimiter);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  // ✅ FIX: Track limits by user ID if logged in, otherwise fall back to IP
-  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+  keyGenerator: (req) => req.ip,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' },
@@ -56,7 +55,7 @@ app.use('/api/auth/register', authLimiter);
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10,
-  keyGenerator: (req) => req.user?._id?.toString() || req.ip, // Track by user ID if available
+  keyGenerator: (req) => req.ip,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many uploads. Please wait a moment before uploading again.' },
@@ -77,7 +76,13 @@ app.use('/api/activity', activityRoutes);
 
 // Quick check to see if the server is alive
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'SecureVault API is running' });
+  res.status(200).json({
+    success: true,
+    message: 'SecureVault API is running',
+    data: {
+      maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024,
+    },
+  });
 });
 
 // Handle unknown URLs smoothly
