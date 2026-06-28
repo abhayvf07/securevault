@@ -77,4 +77,20 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+/**
+ * Admin Authorization Middleware
+ *
+ * Must be chained AFTER protect (which populates req.user).
+ * Returns 403 if the authenticated user is not an admin.
+ */
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required',
+    });
+  }
+  next();
+};
+
+module.exports = { protect, requireAdmin };
