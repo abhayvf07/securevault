@@ -80,6 +80,7 @@ const register = asyncHandler(async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token: accessToken,
     },
@@ -133,6 +134,7 @@ const login = asyncHandler(async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       token: accessToken,
     },
@@ -211,6 +213,7 @@ const getMe = asyncHandler(async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
+        role: req.user.role,
       },
     },
   });
