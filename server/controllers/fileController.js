@@ -67,7 +67,7 @@ const getFiles = asyncHandler(async (req, res) => {
 
   // Pagination params (defaults: page 1, 12 per page)
   const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 12));
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
   const skip = (page - 1) * limit;
 
   // Build query

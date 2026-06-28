@@ -99,7 +99,7 @@ const deleteFile = async (filePath, storageType = 'local', publicId = null) => {
     } else {
       // Local storage — with path traversal protection
       const uploadsDir = path.resolve(__dirname, '..', 'uploads');
-      const resolvedPath = path.resolve(filePath);
+      const resolvedPath = path.resolve(__dirname, '..', filePath);
       
       // Security: Ensure the file path is within uploads directory
       if (!resolvedPath.startsWith(uploadsDir + path.sep)) {
