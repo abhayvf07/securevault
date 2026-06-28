@@ -11,6 +11,7 @@ const fileRoutes = require('./routes/fileRoutes');
 const folderRoutes = require('./routes/folderRoutes');
 const shareRoutes = require('./routes/shareRoutes');
 const activityRoutes = require('./routes/activityRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/files', fileRoutes);
 app.use('/api/folders', folderRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Quick check to see if the server is alive
 app.get('/api/health', (req, res) => {
